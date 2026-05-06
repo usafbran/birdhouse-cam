@@ -177,10 +177,7 @@ impl RemoteClassifier {
 
         // Parse JSON response
         let parsed: serde_json::Value = serde_json::from_str(body)?;
-        let species = parsed["species"]
-            .as_str()
-            .unwrap_or("unknown")
-            .to_string();
+        let species = parsed["species"].as_str().unwrap_or("unknown").to_string();
         let confidence = parsed["confidence"].as_f64().unwrap_or(0.0) as f32;
 
         info!(

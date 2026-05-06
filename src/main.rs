@@ -14,7 +14,6 @@
 ///   - sensor.motion_score           : Current motion detection score
 ///   - camera.birdhouse_camera       : Latest snapshot from the camera
 ///   - sensor.device_info            : Diagnostic info (uptime, heap, RSSI)
-
 mod camera;
 mod config;
 mod detection;
@@ -24,9 +23,7 @@ mod wifi;
 
 use anyhow::Result;
 use esp_idf_svc::{
-    eventloop::EspSystemEventLoop,
-    hal::peripherals::Peripherals,
-    nvs::EspDefaultNvsPartition,
+    eventloop::EspSystemEventLoop, hal::peripherals::Peripherals, nvs::EspDefaultNvsPartition,
 };
 use log::{error, info, warn};
 use std::time::{Duration, Instant};

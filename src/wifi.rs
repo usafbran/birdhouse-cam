@@ -24,10 +24,7 @@ impl WifiConnection {
         sys_loop: EspSystemEventLoop,
         nvs: EspDefaultNvsPartition,
     ) -> Result<Self> {
-        let wifi = BlockingWifi::wrap(
-            EspWifi::new(modem, sys_loop.clone(), Some(nvs))?,
-            sys_loop,
-        )?;
+        let wifi = BlockingWifi::wrap(EspWifi::new(modem, sys_loop.clone(), Some(nvs))?, sys_loop)?;
 
         Ok(Self { wifi })
     }
@@ -48,8 +45,8 @@ impl WifiConnection {
             AuthMethod::WPA2Personal
         };
 
-        self.wifi.set_configuration(&Configuration::Client(
-            ClientConfiguration {
+        self.wifi
+            .set_configuration(&Configuration::Client(ClientConfiguration {
                 ssid: ssid
                     .try_into()
                     .map_err(|_| anyhow::anyhow!("SSID too long"))?,
@@ -58,8 +55,7 @@ impl WifiConnection {
                     .map_err(|_| anyhow::anyhow!("Password too long"))?,
                 auth_method,
                 ..Default::default()
-            },
-        ))?;
+            }))?;
 
         self.wifi.start()?;
         info!("WiFi started, scanning for networks...");

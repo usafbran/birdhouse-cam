@@ -32,9 +32,9 @@ name = "birdhouse-cam"
 path = "src/main.rs"
 
 [dependencies]
+# esp-idf-svc re-exports esp-idf-hal (as esp_idf_svc::hal) and
+# esp-idf-sys (as esp_idf_svc::sys), so no need to depend on them directly.
 esp-idf-svc = { version = "0.50", features = ["binstart"] }
-esp-idf-hal = "0.44"
-esp-idf-sys = { version = "0.36", features = ["binstart", "native"] }
 embedded-svc = "0.28"
 log = "0.4"
 anyhow = "1"

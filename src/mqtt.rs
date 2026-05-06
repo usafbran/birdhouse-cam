@@ -3,8 +3,8 @@
 /// Handles connection to an MQTT broker, publishing sensor data,
 /// and camera images for Home Assistant consumption.
 use anyhow::Result;
-use embedded_svc::mqtt::client::{Event, EventPayload, QoS};
-use esp_idf_svc::mqtt::client::{EspMqttClient, EspMqttConnection, MqttClientConfiguration};
+use embedded_svc::mqtt::client::{EventPayload, QoS};
+use esp_idf_svc::mqtt::client::{EspMqttClient, MqttClientConfiguration};
 use log::{error, info, warn};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
@@ -53,7 +53,7 @@ impl MqttManager {
         let connected = Arc::new(Mutex::new(false));
         let connected_clone = connected.clone();
 
-        let (client, mut connection) =
+        let (client, _connection) =
             EspMqttClient::new_cb(&broker_url, &mqtt_config, move |event| {
                 match event.payload() {
                     EventPayload::Connected(_) => {
@@ -116,11 +116,7 @@ impl MqttManager {
 
     /// Publish bird species classification result.
     pub fn publish_species(&mut self, species: &str, confidence: f32) -> Result<()> {
-        let topic = format!(
-            "{}/{}/species",
-            config::MQTT_TOPIC_BASE,
-            config::DEVICE_ID
-        );
+        let topic = format!("{}/{}/species", config::MQTT_TOPIC_BASE, config::DEVICE_ID);
 
         let payload = serde_json::json!({
             "species": species,
@@ -137,11 +133,7 @@ impl MqttManager {
 
     /// Publish a JPEG camera image for the HA camera entity.
     pub fn publish_image(&mut self, jpeg_data: &[u8]) -> Result<()> {
-        let topic = format!(
-            "{}/{}/camera",
-            config::MQTT_TOPIC_BASE,
-            config::DEVICE_ID
-        );
+        let topic = format!("{}/{}/camera", config::MQTT_TOPIC_BASE, config::DEVICE_ID);
         self.publish(&topic, jpeg_data, QoS::AtMostOnce, false)
     }
 

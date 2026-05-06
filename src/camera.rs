@@ -6,8 +6,7 @@ use anyhow::{bail, Result};
 use esp_idf_svc::sys::{
     camera::{
         camera_config_t, camera_config_t__bindgen_ty_1, camera_fb_t, esp_camera_deinit,
-        esp_camera_fb_get, esp_camera_fb_return, esp_camera_init, pixformat_t_PIXFORMAT_GRAYSCALE,
-        pixformat_t_PIXFORMAT_JPEG,
+        esp_camera_fb_get, esp_camera_fb_return, esp_camera_init, pixformat_t_PIXFORMAT_JPEG,
     },
     gpio_num_t,
 };
@@ -90,7 +89,7 @@ impl Camera {
             frame_size: config::CAMERA_FRAME_SIZE as i32,
             jpeg_quality: config::CAMERA_JPEG_QUALITY as i32,
             fb_count: config::CAMERA_FB_COUNT as i32,
-            grab_mode: 1, // CAMERA_GRAB_LATEST
+            grab_mode: 1,   // CAMERA_GRAB_LATEST
             fb_location: 1, // CAMERA_FB_IN_PSRAM
             __bindgen_anon_1: camera_config_t__bindgen_ty_1 { sccb_i2c_port: -1 },
         };

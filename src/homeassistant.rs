@@ -150,8 +150,7 @@ fn publish_camera_discovery(mqtt: &mut MqttManager) -> Result<()> {
         "topic": format!("{}/{}/camera", config::MQTT_TOPIC_BASE, config::DEVICE_ID),
         "availability_topic": availability_topic(),
         "device": device_payload(),
-        "icon": "mdi:camera-outline",
-        "image_encoding": "b64"
+        "icon": "mdi:camera-outline"
     });
 
     let topic = format!(
