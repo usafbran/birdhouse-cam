@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 /// Birdhouse Camera - ESP32-CAM Bird Detection for Home Assistant
 ///
 /// This application runs on an ESP32-CAM module inside a birdhouse.

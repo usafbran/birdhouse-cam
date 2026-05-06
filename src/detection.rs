@@ -156,9 +156,7 @@ impl RemoteClassifier {
         ];
 
         connection.initiate_request(embedded_svc::http::Method::Post, &url, &headers)?;
-
-        use std::io::Write;
-        connection.write_all(jpeg_data)?;
+        connection.write(jpeg_data)?;
 
         connection.initiate_response()?;
         let status = connection.status();
@@ -167,7 +165,6 @@ impl RemoteClassifier {
             anyhow::bail!("Classification failed with status {}", status);
         }
 
-        use std::io::Read;
         let mut buf = [0u8; 512];
         let bytes_read = connection.read(&mut buf)?;
         let body = core::str::from_utf8(&buf[..bytes_read])?;
