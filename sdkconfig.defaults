@@ -23,9 +23,8 @@ CONFIG_ESP_WIFI_PASSWORD="changeme"
 CONFIG_MQTT_BUFFER_SIZE=4096
 CONFIG_MQTT_TASK_STACK=8192
 
-# Partition table - need larger app partition for camera + ML
-CONFIG_PARTITION_TABLE_CUSTOM=y
-CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
+# Partition table - use large single app (3MB) for camera + MQTT firmware
+CONFIG_PARTITION_TABLE_SINGLE_APP_LARGE=y
 
 # Increase HTTP buffer for image uploads
 CONFIG_ESP_HTTP_CLIENT_ENABLE_HTTPS=y
