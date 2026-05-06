@@ -1,0 +1,18 @@
+[target.xtensa-esp32-espidf]
+linker = "ldproxy"
+runner = "espflash flash --monitor"
+
+[env]
+MCU = "esp32"
+# Note: set these as environment variables or in a .env file before building
+# WIFI_SSID = "your_wifi_ssid"
+# WIFI_PASS = "your_wifi_password"
+# MQTT_HOST = "your_mqtt_broker_ip"
+ESP_IDF_VERSION = "v5.3.2"
+ESP_IDF_SDKCONFIG_DEFAULTS = { value = "sdkconfig.defaults", relative = true }
+
+[build]
+target = "xtensa-esp32-espidf"
+
+[unstable]
+build-std = ["std", "panic_abort"]

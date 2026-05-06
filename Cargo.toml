@@ -1,0 +1,42 @@
+[package]
+name = "birdhouse-cam"
+version = "0.1.0"
+edition = "2021"
+authors = ["Brandon Heard <brheard@gmail.com>"]
+description = "ESP32-CAM bird detection and classification for Home Assistant"
+license = "MIT"
+repository = "https://github.com/usafbran/birdhouse-cam"
+
+[[bin]]
+name = "birdhouse-cam"
+path = "src/main.rs"
+
+[dependencies]
+esp-idf-svc = { version = "0.50", features = ["binstart"] }
+esp-idf-hal = "0.44"
+esp-idf-sys = { version = "0.36", features = ["binstart", "native"] }
+embedded-svc = "0.28"
+log = "0.4"
+anyhow = "1"
+serde = { version = "1", default-features = false, features = ["derive"] }
+serde_json = { version = "1", default-features = false, features = ["alloc"] }
+heapless = "0.8"
+
+[build-dependencies]
+embuild = "0.33"
+
+[profile.dev]
+opt-level = "s"
+
+[profile.release]
+opt-level = "s"
+lto = "fat"
+codegen-units = 1
+debug = false
+strip = "symbols"
+
+# ESP32-Camera component for OV2640 support
+[[package.metadata.esp-idf-sys.extra_components]]
+remote_component = { name = "espressif/esp32-camera", version = "2.0" }
+bindings_header = "bindings.h"
+bindings_module = "camera"
