@@ -1,5 +1,7 @@
 # Birdhouse Camera
 
+[![CI](https://github.com/usafbran/birdhouse-cam/actions/workflows/ci.yml/badge.svg)](https://github.com/usafbran/birdhouse-cam/actions/workflows/ci.yml)
+
 An ESP32-CAM application written in Rust that detects and classifies birds inside a birdhouse, sending real-time alerts to Home Assistant via MQTT.
 
 ## Features
@@ -87,11 +89,16 @@ export CLASSIFICATION_SERVER="http://192.168.1.50:8080"  # Bird classifier URL
 ## Building & Flashing
 
 ```bash
-# Build
+# Build (using make)
+make build          # Debug build
+make release        # Optimized release build
+
+# Or directly with cargo
 cargo build --release
 
 # Flash to ESP32-CAM (put board in download mode first)
-cargo run --release
+make flash          # Builds release and flashes
+# Or: cargo run --release
 ```
 
 ### Putting the ESP32-CAM in Download Mode
@@ -202,28 +209,82 @@ Adjust these constants in `src/config.rs` or via environment variables:
 - Position the WiFi antenna for best signal (external antenna recommended)
 - Power via a weatherproof USB cable or solar panel with battery
 
+## Development
+
+### Setup
+
+```bash
+# Install the ESP Rust toolchain and dev tools
+make setup
+
+# Activate the toolchain
+. $HOME/export-esp.sh
+
+# Install pre-commit hooks
+make hooks
+```
+
+### Workflow
+
+```bash
+make fmt          # Format code
+make lint         # Run clippy linter
+make check        # Type check
+make ci           # Run all checks (fmt + lint + build)
+make size         # Report binary size
+make doc          # Generate and open docs
+```
+
+### CI/CD
+
+GitHub Actions runs on every push and PR:
+
+| Job | Description |
+|-----|-------------|
+| **Format Check** | Verifies `cargo fmt` compliance |
+| **Clippy Lint** | Runs pedantic clippy lints with `-Dwarnings` |
+| **Build (dev)** | Debug build for `xtensa-esp32-espidf` |
+| **Build (release)** | Release build with LTO |
+| **Binary Size Report** | Reports the firmware binary size |
+
+### Pre-commit Hooks
+
+The project uses [pre-commit](https://pre-commit.com/) to enforce quality before commits:
+
+- Trailing whitespace and EOF fixes
+- YAML/TOML validation
+- `cargo fmt` formatting
+- `cargo clippy` linting
+- `cargo check` type checking
+
 ## Project Structure
 
 ```
 birdhouse-cam/
-├── Cargo.toml              # Rust dependencies and ESP-IDF component config
-├── build.rs                # Build script for ESP-IDF integration
-├── sdkconfig.defaults      # ESP-IDF SDK configuration
-├── partitions.csv          # Flash partition layout
-├── bindings.h              # C header for esp32-camera FFI bindings
-├── rust-toolchain.toml     # Rust ESP toolchain specification
 ├── .cargo/
-│   └── config.toml         # Cargo build target and environment config
+│   └── config.toml              # Cargo build target and environment config
+├── .github/
+│   └── workflows/
+│       └── ci.yml               # GitHub Actions CI pipeline
+├── .pre-commit-config.yaml      # Pre-commit hook definitions
+├── Cargo.toml                   # Dependencies, lints, and ESP-IDF components
+├── Makefile                     # Dev commands (build, flash, lint, etc.)
+├── build.rs                     # Build script for ESP-IDF integration
+├── bindings.h                   # C header for esp32-camera FFI bindings
+├── partitions.csv               # Flash partition layout
+├── rust-toolchain.toml          # Rust ESP toolchain specification
+├── rustfmt.toml                 # Code formatting rules
+├── sdkconfig.defaults           # ESP-IDF SDK configuration
 ├── src/
-│   ├── main.rs             # Application entry point and main loop
-│   ├── config.rs           # Compile-time configuration constants
-│   ├── wifi.rs             # WiFi station mode connection management
-│   ├── camera.rs           # OV2640 camera driver (FFI to esp32-camera)
-│   ├── detection.rs        # Motion detection and remote classification
-│   ├── mqtt.rs             # MQTT client for publishing to broker
-│   └── homeassistant.rs    # HA MQTT auto-discovery message publishing
+│   ├── main.rs                  # Application entry point and main loop
+│   ├── config.rs                # Compile-time configuration constants
+│   ├── wifi.rs                  # WiFi station mode connection management
+│   ├── camera.rs                # OV2640 camera driver (FFI to esp32-camera)
+│   ├── detection.rs             # Motion detection and remote classification
+│   ├── mqtt.rs                  # MQTT client for publishing to broker
+│   └── homeassistant.rs         # HA MQTT auto-discovery message publishing
 └── model/
-    └── README.md           # Bird classification model setup guide
+    └── README.md                # Bird classification model setup guide
 ```
 
 ## License
