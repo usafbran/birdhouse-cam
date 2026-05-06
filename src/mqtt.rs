@@ -53,27 +53,26 @@ impl MqttManager {
         let connected = Arc::new(Mutex::new(false));
         let connected_clone = connected.clone();
 
-        let (client, _connection) =
-            EspMqttClient::new_cb(&broker_url, &mqtt_config, move |event| {
-                match event.payload() {
-                    EventPayload::Connected(_) => {
-                        info!("MQTT connected");
-                        if let Ok(mut c) = connected_clone.lock() {
-                            *c = true;
-                        }
+        let client = EspMqttClient::new_cb(&broker_url, &mqtt_config, move |event| {
+            match event.payload() {
+                EventPayload::Connected(_) => {
+                    info!("MQTT connected");
+                    if let Ok(mut c) = connected_clone.lock() {
+                        *c = true;
                     }
-                    EventPayload::Disconnected => {
-                        warn!("MQTT disconnected");
-                        if let Ok(mut c) = connected_clone.lock() {
-                            *c = false;
-                        }
-                    }
-                    EventPayload::Error(e) => {
-                        error!("MQTT error: {:?}", e);
-                    }
-                    _ => {}
                 }
-            })?;
+                EventPayload::Disconnected => {
+                    warn!("MQTT disconnected");
+                    if let Ok(mut c) = connected_clone.lock() {
+                        *c = false;
+                    }
+                }
+                EventPayload::Error(e) => {
+                    error!("MQTT error: {:?}", e);
+                }
+                _ => {}
+            }
+        })?;
 
         info!("MQTT client created");
 

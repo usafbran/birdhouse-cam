@@ -146,25 +146,22 @@ impl RemoteClassifier {
             ..Default::default()
         };
 
-        let mut client = EspHttpConnection::new(&config)?;
+        let mut connection = EspHttpConnection::new(&config)?;
 
-        use embedded_svc::http::client::Client;
+        let url = format!("{}/classify", self.server_url);
+        let content_len = jpeg_data.len().to_string();
         let headers = [
             ("Content-Type", "image/jpeg"),
-            ("Content-Length", &jpeg_data.len().to_string()),
+            ("Content-Length", content_len.as_str()),
         ];
 
-        let mut request = client.request(
-            embedded_svc::http::Method::Post,
-            &format!("{}/classify", self.server_url),
-            &headers,
-        )?;
+        connection.initiate_request(embedded_svc::http::Method::Post, &url, &headers)?;
 
         use embedded_svc::io::Write;
-        request.write_all(jpeg_data)?;
-        let mut response = request.submit()?;
+        connection.write_all(jpeg_data)?;
 
-        let status = response.status();
+        connection.initiate_response()?;
+        let status = connection.status();
         if status != 200 {
             warn!("Classification server returned status {}", status);
             anyhow::bail!("Classification failed with status {}", status);
@@ -172,7 +169,7 @@ impl RemoteClassifier {
 
         use embedded_svc::io::Read;
         let mut buf = [0u8; 512];
-        let bytes_read = response.read(&mut buf)?;
+        let bytes_read = connection.read(&mut buf)?;
         let body = core::str::from_utf8(&buf[..bytes_read])?;
 
         // Parse JSON response

@@ -86,12 +86,14 @@ impl Camera {
             ledc_timer: 0,
             ledc_channel: 0,
             pixel_format: pixformat_t_PIXFORMAT_JPEG,
-            frame_size: config::CAMERA_FRAME_SIZE as i32,
+            frame_size: config::CAMERA_FRAME_SIZE as u32,
             jpeg_quality: config::CAMERA_JPEG_QUALITY as i32,
-            fb_count: config::CAMERA_FB_COUNT as i32,
+            fb_count: config::CAMERA_FB_COUNT as usize,
             grab_mode: 1,   // CAMERA_GRAB_LATEST
             fb_location: 1, // CAMERA_FB_IN_PSRAM
-            __bindgen_anon_1: camera_config_t__bindgen_ty_1 { sccb_i2c_port: -1 },
+            __bindgen_anon_1: camera_config_t__bindgen_ty_1 {
+                pin_sccb_sda: config::pins::SIOD as gpio_num_t,
+            },
         };
 
         let ret = unsafe { esp_camera_init(&camera_config) };
