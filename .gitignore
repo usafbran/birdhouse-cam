@@ -1,0 +1,23 @@
+# Rust build artifacts
+/target
+**/*.rs.bk
+
+# ESP-IDF build
+/managed_components
+/sdkconfig
+/sdkconfig.old
+/build
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Environment secrets
+.env
+*.env.local
+
+# OS
+.DS_Store
+Thumbs.db
