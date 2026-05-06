@@ -5,8 +5,8 @@
 use anyhow::{bail, Result};
 use esp_idf_svc::sys::{
     camera::{
-        camera_config_t, camera_config_t__bindgen_ty_1, camera_fb_t, esp_camera_deinit,
-        esp_camera_fb_get, esp_camera_fb_return, esp_camera_init, pixformat_t_PIXFORMAT_JPEG,
+        camera_config_t, camera_fb_t, esp_camera_deinit, esp_camera_fb_get, esp_camera_fb_return,
+        esp_camera_init, pixformat_t_PIXFORMAT_JPEG,
     },
     gpio_num_t,
 };
@@ -65,36 +65,42 @@ pub struct Camera {
 
 impl Camera {
     pub fn new() -> Result<Self> {
-        let camera_config = camera_config_t {
-            pin_pwdn: config::pins::PWDN as gpio_num_t,
-            pin_reset: config::pins::RESET as gpio_num_t,
-            pin_xclk: config::pins::XCLK as gpio_num_t,
-            pin_sccb_sda: config::pins::SIOD as gpio_num_t,
-            pin_sccb_scl: config::pins::SIOC as gpio_num_t,
-            pin_d7: config::pins::Y9 as gpio_num_t,
-            pin_d6: config::pins::Y8 as gpio_num_t,
-            pin_d5: config::pins::Y7 as gpio_num_t,
-            pin_d4: config::pins::Y6 as gpio_num_t,
-            pin_d3: config::pins::Y5 as gpio_num_t,
-            pin_d2: config::pins::Y4 as gpio_num_t,
-            pin_d1: config::pins::Y3 as gpio_num_t,
-            pin_d0: config::pins::Y2 as gpio_num_t,
-            pin_vsync: config::pins::VSYNC as gpio_num_t,
-            pin_href: config::pins::HREF as gpio_num_t,
-            pin_pclk: config::pins::PCLK as gpio_num_t,
-            xclk_freq_hz: 20_000_000,
-            ledc_timer: 0,
-            ledc_channel: 0,
-            pixel_format: pixformat_t_PIXFORMAT_JPEG,
-            frame_size: config::CAMERA_FRAME_SIZE as u32,
-            jpeg_quality: config::CAMERA_JPEG_QUALITY as i32,
-            fb_count: config::CAMERA_FB_COUNT as usize,
-            grab_mode: 1,   // CAMERA_GRAB_LATEST
-            fb_location: 1, // CAMERA_FB_IN_PSRAM
-            __bindgen_anon_1: camera_config_t__bindgen_ty_1 {
-                pin_sccb_sda: config::pins::SIOD as gpio_num_t,
-            },
-        };
+        // Use zeroed struct to avoid naming bindgen anonymous union fields
+        // (their names vary between esp32-camera component versions).
+        let mut camera_config: camera_config_t = unsafe { core::mem::zeroed() };
+        camera_config.pin_pwdn = config::pins::PWDN as gpio_num_t;
+        camera_config.pin_reset = config::pins::RESET as gpio_num_t;
+        camera_config.pin_xclk = config::pins::XCLK as gpio_num_t;
+        camera_config.pin_d7 = config::pins::Y9 as gpio_num_t;
+        camera_config.pin_d6 = config::pins::Y8 as gpio_num_t;
+        camera_config.pin_d5 = config::pins::Y7 as gpio_num_t;
+        camera_config.pin_d4 = config::pins::Y6 as gpio_num_t;
+        camera_config.pin_d3 = config::pins::Y5 as gpio_num_t;
+        camera_config.pin_d2 = config::pins::Y4 as gpio_num_t;
+        camera_config.pin_d1 = config::pins::Y3 as gpio_num_t;
+        camera_config.pin_d0 = config::pins::Y2 as gpio_num_t;
+        camera_config.pin_vsync = config::pins::VSYNC as gpio_num_t;
+        camera_config.pin_href = config::pins::HREF as gpio_num_t;
+        camera_config.pin_pclk = config::pins::PCLK as gpio_num_t;
+        camera_config.xclk_freq_hz = 20_000_000;
+        camera_config.pixel_format = pixformat_t_PIXFORMAT_JPEG;
+        camera_config.frame_size = config::CAMERA_FRAME_SIZE as _;
+        camera_config.jpeg_quality = config::CAMERA_JPEG_QUALITY as _;
+        camera_config.fb_count = config::CAMERA_FB_COUNT as _;
+        camera_config.grab_mode = 1; // CAMERA_GRAB_LATEST
+        camera_config.fb_location = 1; // CAMERA_FB_IN_PSRAM
+        camera_config.sccb_i2c_port = -1;
+
+        // Set SDA/SCL pins through the anonymous unions.
+        // In the C struct these are `pin_sccb_sda` and `pin_sccb_scl` inside
+        // anonymous unions; bindgen names them __bindgen_anon_N. We write them
+        // through raw pointers to avoid depending on the exact union naming.
+        unsafe {
+            let sda_ptr = core::ptr::addr_of_mut!(camera_config.__bindgen_anon_1).cast::<i32>();
+            sda_ptr.write(config::pins::SIOD as i32);
+            let scl_ptr = core::ptr::addr_of_mut!(camera_config.__bindgen_anon_2).cast::<i32>();
+            scl_ptr.write(config::pins::SIOC as i32);
+        }
 
         let ret = unsafe { esp_camera_init(&camera_config) };
         if ret != 0 {
