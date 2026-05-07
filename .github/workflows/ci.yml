@@ -1,0 +1,185 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master, init-branch]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  fmt:
+    name: Format Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ESP Rust Toolchain
+        uses: esp-rs/xtensa-toolchain@v1.6
+        with:
+          default: true
+          ldproxy: true
+
+      - name: Check formatting
+        run: cargo fmt -- --check
+
+  clippy:
+    name: Clippy Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ESP Rust Toolchain
+        uses: esp-rs/xtensa-toolchain@v1.6
+        with:
+          default: true
+          ldproxy: true
+
+      - name: Cache Cargo and ESP-IDF
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+            .embuild
+          key: ${{ runner.os }}-clippy-${{ hashFiles('**/Cargo.lock', 'sdkconfig.defaults') }}
+          restore-keys: |
+            ${{ runner.os }}-clippy-
+
+      - name: Run Clippy
+        env:
+          ESP_IDF_VERSION: "v5.3.2"
+          ESP_IDF_SDKCONFIG_DEFAULTS: "${{ github.workspace }}/sdkconfig.defaults"
+        run: >
+          cargo clippy
+          --no-deps
+          --target xtensa-esp32-espidf
+          -Zbuild-std=std,panic_abort
+          -- -Dwarnings
+
+  build:
+    name: Build (${{ matrix.profile }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        profile: [dev, release]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ESP Rust Toolchain
+        uses: esp-rs/xtensa-toolchain@v1.6
+        with:
+          default: true
+          ldproxy: true
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-pip python3-venv
+
+      - name: Cache Cargo and ESP-IDF
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+            .embuild
+          key: ${{ runner.os }}-build-${{ matrix.profile }}-${{ hashFiles('**/Cargo.lock', 'sdkconfig.defaults') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ matrix.profile }}-
+
+      - name: Build (${{ matrix.profile }})
+        env:
+          ESP_IDF_VERSION: "v5.3.2"
+          ESP_IDF_SDKCONFIG_DEFAULTS: "${{ github.workspace }}/sdkconfig.defaults"
+        run: >
+          cargo build
+          ${{ matrix.profile == 'release' && '--release' || '' }}
+          --target xtensa-esp32-espidf
+          -Zbuild-std=std,panic_abort
+
+  doc:
+    name: Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ESP Rust Toolchain
+        uses: esp-rs/xtensa-toolchain@v1.6
+        with:
+          default: true
+          ldproxy: true
+
+      - name: Check documentation warnings
+        env:
+          ESP_IDF_VERSION: "v5.3.2"
+          ESP_IDF_SDKCONFIG_DEFAULTS: "${{ github.workspace }}/sdkconfig.defaults"
+          RUSTDOCFLAGS: "-Dwarnings"
+        run: >
+          cargo doc
+          --no-deps
+          --target xtensa-esp32-espidf
+          -Zbuild-std=std,panic_abort
+        continue-on-error: true
+
+  size:
+    name: Binary Size Report
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ESP Rust Toolchain
+        uses: esp-rs/xtensa-toolchain@v1.6
+        with:
+          default: true
+          ldproxy: true
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-pip python3-venv
+
+      - name: Cache Cargo and ESP-IDF
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+            .embuild
+          key: ${{ runner.os }}-build-release-${{ hashFiles('**/Cargo.lock', 'sdkconfig.defaults') }}
+          restore-keys: |
+            ${{ runner.os }}-build-release-
+
+      - name: Build release binary
+        env:
+          ESP_IDF_VERSION: "v5.3.2"
+          ESP_IDF_SDKCONFIG_DEFAULTS: "${{ github.workspace }}/sdkconfig.defaults"
+        run: >
+          cargo build
+          --release
+          --target xtensa-esp32-espidf
+          -Zbuild-std=std,panic_abort
+
+      - name: Report binary size
+        run: |
+          echo "## Binary Size Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          BINARY=$(find target/xtensa-esp32-espidf/release -name "birdhouse-cam" -not -path "*/deps/*" -not -path "*/build/*" | head -1)
+          if [ -n "$BINARY" ]; then
+            SIZE=$(stat -c%s "$BINARY" 2>/dev/null || echo "unknown")
+            SIZE_KB=$((SIZE / 1024))
+            echo "| Artifact | Size |" >> $GITHUB_STEP_SUMMARY
+            echo "|----------|------|" >> $GITHUB_STEP_SUMMARY
+            echo "| \`birdhouse-cam\` (release) | ${SIZE_KB} KB |" >> $GITHUB_STEP_SUMMARY
+            echo ""
+            echo "Binary size: ${SIZE_KB} KB ($SIZE bytes)"
+          else
+            echo "Binary not found - build may have failed"
+          fi
